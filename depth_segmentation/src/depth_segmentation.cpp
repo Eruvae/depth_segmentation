@@ -697,7 +697,7 @@ void DepthSegmenter::inpaintImage(const cv::Mat& depth_image,
   CHECK_EQ(depth_image.size(), label_map.size());
   CHECK_NOTNULL(inpainted);
   cv::Mat gray_edge;
-  cv::cvtColor(label_map, gray_edge, CV_BGR2GRAY);
+  cv::cvtColor(label_map, gray_edge, cv::COLOR_BGR2GRAY);
 
   cv::Mat mask = cv::Mat::zeros(edge_map.size(), CV_8UC1);
   // We set the mask to 1 where we have depth values but no label.
@@ -764,7 +764,7 @@ void DepthSegmenter::labelMap(const cv::Mat& rgb_image,
       static const cv::Point kContourOffset = cv::Point(0, 0);
       cv::findContours(edge_map_8u, contours, hierarchy,
                        cv::RETR_TREE, /*cv::RETR_CCOMP*/
-                       CV_CHAIN_APPROX_NONE, kContourOffset);
+                       cv::CHAIN_APPROX_NONE, kContourOffset);
 
       std::vector<cv::Scalar> colors;
       std::vector<int> labels;
@@ -778,7 +778,7 @@ void DepthSegmenter::labelMap(const cv::Mat& rgb_image,
             // Assign black color to areas that have no parent contour.
             colors[i] = cv::Scalar(0, 0, 0);
             labels[i] = -1;
-            drawContours(edge_map_8u, contours, i, cv::Scalar(0u), CV_FILLED, 8,
+            drawContours(edge_map_8u, contours, i, cv::Scalar(0u), cv::FILLED, 8,
                          hierarchy);
           } else {
             if (hierarchy[i][0] == -1 && hierarchy[i][1] == -1) {
@@ -788,7 +788,7 @@ void DepthSegmenter::labelMap(const cv::Mat& rgb_image,
             } else {
               colors[i] = cv::Scalar(0, 0, 0);
               labels[i] = -1;
-              drawContours(edge_map_8u, contours, i, cv::Scalar(0u), CV_FILLED,
+              drawContours(edge_map_8u, contours, i, cv::Scalar(0u), cv::FILLED,
                            8, hierarchy);
             }
           }
@@ -798,10 +798,10 @@ void DepthSegmenter::labelMap(const cv::Mat& rgb_image,
       cv::Mat output_labels =
           cv::Mat(depth_image.size(), CV_32SC1, cv::Scalar(0));
       for (size_t i = 0u; i < contours.size(); ++i) {
-        drawContours(output, contours, i, cv::Scalar(colors[i]), CV_FILLED, 8,
+        drawContours(output, contours, i, cv::Scalar(colors[i]), cv::FILLED, 8,
                      hierarchy);
         drawContours(output_labels, contours, i, cv::Scalar(labels[i]),
-                     CV_FILLED, 8, hierarchy);
+                     cv::FILLED, 8, hierarchy);
         drawContours(edge_map_8u, contours, i, cv::Scalar(0u), 1, 8, hierarchy);
       }
 
