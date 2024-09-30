@@ -127,6 +127,8 @@ class DepthSegmentationNode {
     node_handle_.param<float>("max_segment_depth", max_segment_depth_,
                                     depth_segmentation::kMaxSegmentDepth);
 
+    node_handle_.param<bool>("publish_scene_as_xyzl", publish_scene_as_xyzl_, false);
+
     depth_image_sub_ = new image_transport::SubscriberFilter(
         image_transport_, depth_image_topic_, 1);
     rgb_image_sub_ = new image_transport::SubscriberFilter(image_transport_,
@@ -280,6 +282,8 @@ class DepthSegmentationNode {
   bool robot_moving_ = true;
   bool robot_steady_ = false;
   bool vecs_initialized_ = false;
+
+  bool publish_scene_as_xyzl_ = false;
 
 #ifdef MASKRCNNROS_AVAILABLE
   message_filters::Subscriber<mask_rcnn_ros::Result>*
@@ -492,6 +496,8 @@ class DepthSegmentationNode {
     if (params_.semantic_instance_segmentation.enable) {
       pcl::PointCloud<PointSurfelLabel>::Ptr scene_pcl(
           new pcl::PointCloud<PointSurfelLabel>);
+      pcl::PointCloud<pcl::PointXYZL>::Ptr scene_pcl_xyzl(
+          new pcl::PointCloud<pcl::PointXYZL>);
       for (depth_segmentation::Segment segment : segments) {
         if(forward_labeled_segments_only_ && segment.is_pepper == false)
           continue;
@@ -517,7 +523,20 @@ class DepthSegmentationNode {
                     &point_pcl);
 
           segment_pcl->push_back(point_pcl);
-          scene_pcl->push_back(point_pcl);
+
+          if (publish_scene_as_xyzl_)
+          {
+            pcl::PointXYZL point_xyzl;
+            point_xyzl.x = point_pcl.x;
+            point_xyzl.y = point_pcl.y;
+            point_xyzl.z = point_pcl.z;
+            point_xyzl.label = point_pcl.semantic_label;
+            scene_pcl_xyzl->push_back(point_xyzl);
+          }
+          else
+          {
+            scene_pcl->push_back(point_pcl);
+          }
         }
 
         sensor_msgs::PointCloud2 pcl2_msg;
@@ -527,7 +546,14 @@ class DepthSegmentationNode {
         point_cloud2_segment_pub_.publish(pcl2_msg);
       }
       if (params_.visualize_segmented_scene) {
-        pcl::toROSMsg(*scene_pcl, pcl2_msg);
+        if (publish_scene_as_xyzl_)
+        {
+          pcl::toROSMsg(*scene_pcl_xyzl, pcl2_msg);
+        }
+        else
+        {
+          pcl::toROSMsg(*scene_pcl, pcl2_msg);
+        }
       }
     } else {
       pcl::PointCloud<pcl::PointSurfel>::Ptr scene_pcl(
