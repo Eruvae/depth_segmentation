@@ -142,7 +142,7 @@ class DepthSegmentationNode {
         node_handle_, pc2_msg_topic_, 1);
 
     joint_states_sub_ = node_handle_.subscribe(joint_states_topic_, 1, &DepthSegmentationNode::registerJointState, this);
-    constexpr int kQueueSize = 30;
+    constexpr int kQueueSize = 100;
 
 #ifndef MASKRCNNROS_AVAILABLE
     if (params_.semantic_instance_segmentation.enable) {
@@ -516,6 +516,9 @@ class DepthSegmentationNode {
           uint32_t instance_label = 0u;
           if (segment.instance_label.size() > 0u) {
             instance_label = *(segment.instance_label.begin());
+          }
+          if (segment.semantic_label.size() > 0u)
+          {
             semantic_label = *(segment.semantic_label.begin());
           }
           fillPoint(segment.points[i], segment.normals[i],
@@ -603,11 +606,11 @@ class DepthSegmentationNode {
         segmentation_msg->masks.size());
     for (size_t i = 0u; i < segmentation_msg->masks.size(); ++i) {
       //ROS_INFO_STREAM("\t Mask class name: "<<segmentation_msg->class_names[i]<<"\t instance id: "<<segmentation_msg->instance_ids[i]);
-      if(segmentation_msg->class_names[i] == "peduncle" || segmentation_msg->class_names[i] == "stem")
+      /*if(segmentation_msg->class_names[i] == "peduncle" || segmentation_msg->class_names[i] == "stem")
       {
         ROS_WARN_STREAM("Peduncle mask Discarding: "<<segmentation_msg->class_names[i]<<" class_id: "<<segmentation_msg->class_ids[i]);
         continue;
-      }
+      }*/
       cv_bridge::CvImagePtr cv_mask_image;
       cv_mask_image = cv_bridge::toCvCopy(segmentation_msg->masks[i],
                                           sensor_msgs::image_encodings::MONO8);
@@ -836,7 +839,7 @@ class DepthSegmentationNode {
       //const sensor_msgs::PointCloud2::ConstPtr& pc2_msg) 
   {
     depth_segmentation::SemanticInstanceSegmentation instance_segmentation;
-    ROS_WARN_STREAM_THROTTLE(20, "imageSegmentationCallback");
+    ROS_WARN_STREAM_THROTTLE(0.5, "imageSegmentationCallback");
     semanticInstanceSegmentationFromRosMsg(segmentation_msg,
                                            &instance_segmentation);
     
